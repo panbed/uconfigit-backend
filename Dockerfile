@@ -1,6 +1,6 @@
-FROM node:slim
+FROM node:lts-alpine
 
-RUN apt-get update -y && apt-get install --assume-yes --no-install-recommends docker.io
+RUN apk add --no-cache docker
 WORKDIR /app
 COPY . .
 RUN npm install
