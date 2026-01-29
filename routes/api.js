@@ -132,12 +132,12 @@ router.post('/mysql/add-institution', async function(req, res, next) {
 // ANCHOR: modifying .env file endpoints
 
 // get all current env variables
-// TODO: this is insecure
+// TODO: this is insecure if there is no password protection on the backend 
 router.get('/env', function(req, res, next) {
     let envConfig = require('fs').readFileSync(envPath, 'utf-8');
 
     // return value of DATABASE_URL, BASE_URL, JWK_BASE_URL, APP_SECRET only
-    const keysToGet = ['DATABASE_URL', 'BASE_URL', 'JWK_BASE_URL', 'APP_SECRET'];
+    const keysToGet = ['DATABASE_URL', 'BASE_URL', 'JWK_BASE_URL', 'APP_SECRET', 'ACCESSIBILITY_CHECKER'];
     let result = {};
     keysToGet.forEach(key => {
         const regex = new RegExp(`^${key}=(.*)$`, 'm');
@@ -159,15 +159,12 @@ router.post('/env', function(req, res, next) {
     }
 
     // only allow certain keys to be updated
-    const allowedKeys = ['DATABASE_URL', 'BASE_URL', 'JWK_BASE_URL', 'APP_SECRET'];
+    const allowedKeys = ['DATABASE_URL', 'BASE_URL', 'JWK_BASE_URL', 'APP_SECRET', 'SETUP_COMPLETE', 'ACCESSIBILITY_CHECKER'];
     if (!allowedKeys.includes(key)) {
         return res.status(400).send('Key not allowed to be updated');
     }
     
-    // update .env file
     const fs = require('fs');
-    
-    // check if envPath exists
     if (!fs.existsSync(envPath)) {
         console.log(envPath)
         // TODO: maybe remove the path later
@@ -226,5 +223,25 @@ router.post('/docker/restart-udoit-web', function(req, res, next) {
         res.status(500).send('Error restarting udoit-web container!');
     }
 });
+
+// stop all running containers
+router.post('/docker/stop-all', function(req, res, next) {
+    try {
+        const { exec } = require('child_process');
+        exec('docker stop $(docker ps -q)', (error, stdout, stderr) => {
+            if (error) {
+                console.error('Error stopping all containers:', error);
+                return res.status(500).send('Error stopping all containers!');
+            }
+
+            res.status(200).send('All containers stopped successfully!');
+        });
+    } catch (err) {
+        console.error('Error stopping all containers:', err);
+        res.status(500).send('Error stopping all containers!');
+    }
+});
+
+// ANCHOR: shell commands
 
 module.exports = router;
